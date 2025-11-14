@@ -1,5 +1,7 @@
 // API Configuration
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api';
+const API_BASE_URL = window.location.hostname === 'localhost' ? 
+    'http://localhost:3001/api' : 
+    `${window.location.protocol}//${window.location.host}/api`;
 
 // Global state
 let caregivers = [];

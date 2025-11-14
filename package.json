@@ -1,0 +1,17 @@
+{
+  "name": "caregiver-tracker",
+  "version": "1.0.0",
+  "description": "Mobile-friendly bilingual caregiver time tracking app with universal data sync",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "dev": "cd backend && node server.js",
+    "build": "cd backend && npm install"
+  },
+  "keywords": ["caregiver", "time-tracker", "bilingual", "mobile"],
+  "author": "parryying",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
