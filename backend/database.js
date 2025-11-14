@@ -19,86 +19,9 @@ function createDatabase() {
 }
 
 function createPostgreSQLConnection(databaseUrl) {
-    const { Pool } = require('pg');
-    
-    const pool = new Pool({
-        connectionString: databaseUrl,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-
-    // Create a wrapper to match SQLite interface
-    const db = {
-        // Query methods
-        all: (query, params, callback) => {
-            if (typeof params === 'function') {
-                callback = params;
-                params = [];
-            }
-            pool.query(query, params)
-                .then(result => callback(null, result.rows))
-                .catch(err => callback(err));
-        },
-        
-        get: (query, params, callback) => {
-            if (typeof params === 'function') {
-                callback = params;
-                params = [];
-            }
-            pool.query(query, params)
-                .then(result => callback(null, result.rows[0]))
-                .catch(err => callback(err));
-        },
-        
-        run: (query, params, callback) => {
-            if (typeof params === 'function') {
-                callback = params;
-                params = [];
-            }
-            pool.query(query, params)
-                .then(result => {
-                    const mockThis = { 
-                        changes: result.rowCount,
-                        lastID: result.insertId || null 
-                    };
-                    if (callback) callback.call(mockThis, null);
-                })
-                .catch(err => {
-                    if (callback) callback(err);
-                });
-        },
-        
-        serialize: (callback) => {
-            if (callback) callback();
-        },
-        
-        prepare: (query) => {
-            return {
-                run: (params, callback) => {
-                    if (typeof params === 'function') {
-                        callback = params;
-                        params = [];
-                    }
-                    pool.query(query, params)
-                        .then(result => {
-                            if (callback) callback(null);
-                        })
-                        .catch(err => {
-                            if (callback) callback(err);
-                        });
-                },
-                finalize: () => { /* No-op for PostgreSQL */ }
-            };
-        },
-        
-        close: (callback) => {
-            pool.end(callback);
-        }
-    };
-
-    // Initialize PostgreSQL tables
-    initializePostgreSQLTables(pool);
-    
-    return db;
+    // PostgreSQL support temporarily disabled for deployment stability
+    console.log('⚠️ PostgreSQL support disabled. Falling back to SQLite.');
+    return createSQLiteConnection();
 }
 
 function createSQLiteConnection() {
