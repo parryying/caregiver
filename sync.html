@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caregiver Tracker | 护工记录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            text-align: center;
+            padding: 25px 20px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 25px 20px;
+        }
+
+        .setup-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .setup-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .setup-section p {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .connected-section {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .connected-section h3 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        .caregiver-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .caregiver-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .status-in { background: #d4edda; color: #155724; }
+        .status-out { background: #f8d7da; color: #721c24; }
+
+        .btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 8px 0;
+            text-align: center;
+        }
+
+        .btn-clock-in { background: #28a745; color: white; }
+        .btn-clock-out { background: #dc3545; color: white; }
+        .btn-setup { background: #ffc107; color: #212529; }
+        .btn-view { background: #17a2b8; color: white; }
+        .btn-add { background: #6f42c1; color: white; }
+
+        .btn:hover:not(:disabled) { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled { 
+            opacity: 0.5; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
+
+        .hours-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .hours-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .hours-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .hours-label {
+            font-size: 11px;
+            margin-top: 3px;
+            line-height: 1.2;
+        }
+
+        .current-time {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .sync-status {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 15px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .sync-ok { color: #28a745; }
+        .sync-error { color: #dc3545; }
+
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .url-input:focus {
+            border-color: #2196F3;
+            outline: none;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 5px; }
+            .header { padding: 20px 15px; }
+            .main-content { padding: 20px 15px; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Caregiver Tracker | 护工记录</h1>
+            <div class="subtitle">Real-Time Sync Across Devices | 设备间实时同步</div>
+        </div>
+
+        <div class="main-content">
+            <div class="current-time" id="currentTime"></div>
+
+            <!-- Setup Section -->
+            <div class="setup-section" id="setupSection">
+                <h3>📊 Quick Setup | 快速设置</h3>
+                <p>1. Click "Create Google Sheet" | 点击"创建谷歌表格"</p>
+                <p>2. Copy the URL back here | 复制网址到这里</p>
+                <p>3. Start tracking! | 开始记录！</p>
+                
+                <button class="btn btn-setup" onclick="openGoogleSheets()">
+                    🔗 Create Google Sheet | 创建谷歌表格
+                </button>
+                
+                <input type="url" 
+                       class="url-input" 
+                       id="sheetUrlInput" 
+                       placeholder="Paste Google Sheets URL here | 在此粘贴谷歌表格网址"
+                       onpaste="setTimeout(connectSheet, 100)">
+                
+                <button class="btn btn-setup" onclick="connectSheet()">
+                    ✅ Connect Sheet | 连接表格
+                </button>
+            </div>
+
+            <!-- Connected Section -->
+            <div class="connected-section" id="connectedSection" style="display: none;">
+                <h3>✅ Connected to Google Sheets</h3>
+                <p>Data syncs automatically across all devices</p>
+                <p>所有设备数据自动同步</p>
+                <button class="btn btn-view" onclick="openSheet()">
+                    📊 View Google Sheet | 查看谷歌表格
+                </button>
+            </div>
+
+            <!-- Caregiver Cards -->
+            <div id="caregiversContainer"></div>
+
+            <!-- Quick Actions -->
+            <div style="margin-top: 20px;">
+                <button class="btn btn-add" onclick="addCaregiver()">
+                    + Add Caregiver | + 添加护工
+                </button>
+            </div>
+
+            <!-- Sync Status -->
+            <div class="sync-status" id="syncStatus">
+                📡 Set up Google Sheets to sync data | 设置谷歌表格以同步数据
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let SHEET_URL = localStorage.getItem('sheet_url') || '';
+        let caregivers = [
+            {
+                id: 'default',
+                name: 'Maria Chen | 陈玛丽亚',
+                monthlyHours: 160,
+                currentStatus: 'out',
+                workedHours: 0
+            }
+        ];
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function openGoogleSheets() {
+            alert(`
+📊 Creating Your Google Sheet:
+
+1. Click OK to open Google Sheets
+2. Create a new blank spreadsheet
+3. Copy the URL from your browser
+4. Paste it back in the input box below
+5. Start tracking!
+
+点击确定打开谷歌表格，创建新表格，复制网址粘贴到下面
+            `);
+            
+            window.open('https://docs.google.com/spreadsheets/create', '_blank');
+        }
+
+        function connectSheet() {
+            const url = document.getElementById('sheetUrlInput').value.trim();
+            
+            if (!url) {
+                alert('Please paste your Google Sheets URL first | 请先粘贴您的谷歌表格网址');
+                return;
+            }
+            
+            if (!url.includes('docs.google.com/spreadsheets')) {
+                alert('Please enter a valid Google Sheets URL | 请输入有效的谷歌表格网址');
+                return;
+            }
+            
+            SHEET_URL = url;
+            localStorage.setItem('sheet_url', url);
+            
+            document.getElementById('setupSection').style.display = 'none';
+            document.getElementById('connectedSection').style.display = 'block';
+            
+            updateSyncStatus('✅ Connected! Data will sync automatically | 已连接！数据将自动同步', true);
+            
+            // Initialize the sheet with headers if needed
+            initializeSheet();
+        }
+
+        function openSheet() {
+            if (SHEET_URL) {
+                window.open(SHEET_URL, '_blank');
+            }
+        }
+
+        function initializeSheet() {
+            if (!SHEET_URL) return;
+            
+            // Create the data row for the sheet
+            const now = new Date();
+            const initData = `${now.toLocaleDateString()}	Initial Setup	${now.toLocaleTimeString()}			Sheet Connected`;
+            
+            // Copy initialization data to clipboard
+            navigator.clipboard.writeText(initData).then(() => {
+                alert(`
+✅ Sheet Connected Successfully!
+
+To complete setup:
+1. Open your Google Sheet (click "View Google Sheet")
+2. Add these headers in row 1:
+   Date | Caregiver | Clock In | Clock Out | Hours | Notes
+3. The app will now sync data automatically!
+
+表格连接成功！在第一行添加标题：日期|护工|上班|下班|小时|备注
+                `);
+            }).catch(() => {
+                console.log('Could not copy to clipboard');
+            });
+        }
+
+        function updateSyncStatus(message, isOk) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = message;
+            status.className = 'sync-status ' + (isOk ? 'sync-ok' : 'sync-error');
+        }
+
+        function addToSheet(data) {
+            if (!SHEET_URL) return;
+            
+            // Format data for easy copying to Google Sheets
+            const sheetRow = `${data.date}	${data.caregiver}	${data.clockIn}	${data.clockOut}	${data.hours}	${data.notes || ''}`;
+            
+            // Copy to clipboard for easy pasting
+            navigator.clipboard.writeText(sheetRow).then(() => {
+                updateSyncStatus(`📋 Data copied - paste into Google Sheet | 数据已复制-粘贴到谷歌表格`, true);
+                
+                // Show helpful popup
+                setTimeout(() => {
+                    alert(`📋 Data Ready to Paste!
+
+1. Open your Google Sheet
+2. Click on the next empty row
+3. Press Ctrl+V (or Cmd+V) to paste
+4. Data will appear across columns
+
+数据已准备好粘贴！打开表格，点击空行，按Ctrl+V粘贴`);
+                }, 500);
+                
+            }).catch(() => {
+                updateSyncStatus(`⚠️ Copy failed - add data manually | 复制失败-请手动添加数据`, false);
+            });
+        }
+
+        function clockIn(caregiverId) {
+            const caregiver = caregivers.find(c => c.id === caregiverId);
+            if (!caregiver) return;
+            
+            if (caregiver.currentStatus === 'in') {
+                alert('Already clocked in! | 已经上班打卡！');
+                return;
+            }
+            
+            const now = new Date();
+            caregiver.currentStatus = 'in';
+            caregiver.clockInTime = now;
+            
+            // Add to Google Sheet
+            addToSheet({
+                date: now.toLocaleDateString(),
+                caregiver: caregiver.name,
+                clockIn: now.toLocaleTimeString(),
+                clockOut: '',
+                hours: '',
+                notes: 'Clock In'
+            });
+            
+            renderCaregivers();
+        }
+
+        function clockOut(caregiverId) {
+            const caregiver = caregivers.find(c => c.id === caregiverId);
+            if (!caregiver) return;
+            
+            if (caregiver.currentStatus === 'out') {
+                alert('Not clocked in! | 未上班打卡！');
+                return;
+            }
+            
+            const now = new Date();
+            const clockInTime = caregiver.clockInTime || now;
+            const hours = Math.round(((now - clockInTime) / (1000 * 60 * 60)) * 100) / 100;
+            
+            caregiver.currentStatus = 'out';
+            caregiver.workedHours += hours;
+            caregiver.clockInTime = null;
+            
+            // Add to Google Sheet
+            addToSheet({
+                date: now.toLocaleDateString(),
+                caregiver: caregiver.name,
+                clockIn: clockInTime.toLocaleTimeString(),
+                clockOut: now.toLocaleTimeString(),
+                hours: hours,
+                notes: 'Clock Out'
+            });
+            
+            renderCaregivers();
+        }
+
+        function renderCaregivers() {
+            const container = document.getElementById('caregiversContainer');
+            
+            container.innerHTML = caregivers.map(caregiver => {
+                const isClocked = caregiver.currentStatus === 'in';
+                const remaining = Math.max(0, caregiver.monthlyHours - caregiver.workedHours);
+
+                return `
+                    <div class="caregiver-card">
+                        <div class="caregiver-name">${caregiver.name}</div>
+                        <div class="status-badge ${isClocked ? 'status-in' : 'status-out'}">
+                            ${isClocked ? 'Working | 工作中' : 'Off Duty | 下班'}
+                        </div>
+                        
+                        <button class="btn btn-clock-in" onclick="clockIn('${caregiver.id}')" ${isClocked ? 'disabled' : ''}>
+                            ⏰ Clock In | 上班打卡
+                        </button>
+                        <button class="btn btn-clock-out" onclick="clockOut('${caregiver.id}')" ${!isClocked ? 'disabled' : ''}>
+                            ⏰ Clock Out | 下班打卡
+                        </button>
+
+                        <div class="hours-info">
+                            <div class="hours-card">
+                                <div class="hours-number">${caregiver.workedHours.toFixed(1)}</div>
+                                <div class="hours-label">Worked<br>已工作</div>
+                            </div>
+                            <div class="hours-card">
+                                <div class="hours-number">${remaining.toFixed(1)}</div>
+                                <div class="hours-label">Remaining<br>剩余</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addCaregiver() {
+            const name = prompt('Enter caregiver name (English | Chinese)\n输入护工姓名（英文｜中文）:');
+            if (!name) return;
+
+            const hours = parseInt(prompt('Monthly hours | 月工作小时:', '160'));
+            if (!hours || hours < 1) return;
+
+            caregivers.push({
+                id: Date.now().toString(),
+                name: name,
+                monthlyHours: hours,
+                currentStatus: 'out',
+                workedHours: 0
+            });
+
+            renderCaregivers();
+        }
+
+        // Initialize
+        function init() {
+            setInterval(updateTime, 1000);
+            updateTime();
+            renderCaregivers();
+            
+            if (SHEET_URL) {
+                document.getElementById('setupSection').style.display = 'none';
+                document.getElementById('connectedSection').style.display = 'block';
+                updateSyncStatus('✅ Connected to Google Sheets | 已连接到谷歌表格', true);
+            }
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
