@@ -3,29 +3,1085 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Care Giver</title>
+    <title>Caregiver Time Tracker | 护工时间追踪</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-            font-family: Arial, sans-serif;
+            box-sizing: border-box;
         }
-        
-        .care-giver {
-            color: #0066cc;
-            font-size: 3rem;
-            font-weight: bold;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
             text-align: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 30px 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px 20px;
+        }
+
+        .caregiver-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .caregiver-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .status-in {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 18px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+        }
+
+        .btn-clock-in {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-clock-in:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-clock-out {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-clock-out:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+            grid-column: 1 / -1;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .hours-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .hours-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .hours-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .hours-label {
+            font-size: 14px;
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+
+        .add-caregiver {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn-add {
+            background: #6f42c1;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+        }
+
+        .btn-add:hover {
+            background: #5a32a3;
+        }
+
+        .btn-settings {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-settings:hover {
+            background: #138496;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            border-color: #2196F3;
+            outline: none;
+        }
+
+        .btn-close {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-close:hover {
+            background: #545b62;
+        }
+
+        .caregiver-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .caregiver-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .caregiver-info {
+            flex: 1;
+        }
+
+        .caregiver-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 14px;
+            min-height: auto;
+        }
+
+        .current-time {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .main-content {
+                padding: 20px 15px;
+            }
+            
+            .caregiver-card {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="care-giver">Care Giver</div>
+    <div class="container">
+        <div class="header">
+            <h1>Caregiver Time Tracker<br>护工时间追踪</h1>
+            <div class="subtitle">Family Dashboard | 家庭管理面板</div>
+        </div>
+
+        <div class="main-content">
+            <div class="current-time" id="currentTime">
+                <!-- Current time will be inserted here -->
+            </div>
+
+            <!-- Management Buttons -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                <button class="btn btn-settings" onclick="openCaregiverManager()">
+                    Manage Caregivers<br>管理护工
+                </button>
+                <button class="btn btn-settings" onclick="generateReport()">
+                    Generate Report<br>生成报告
+                </button>
+            </div>
+
+            <!-- Caregiver Cards Container -->
+            <div id="caregiversContainer">
+                <!-- Caregiver cards will be dynamically generated here -->
+            </div>
+
+            <!-- Data Management Section -->
+            <div class="data-section">
+                <button class="btn btn-add" onclick="toggleDataView()" style="margin-bottom: 15px;">
+                    View Time Logs | 查看时间记录
+                </button>
+                
+                <div id="timeLogsView" style="display: none;">
+                    <div class="caregiver-card">
+                        <h3 style="margin-bottom: 15px;">Time Entries | 时间记录</h3>
+                        <div id="timeLogsList">
+                            <!-- Time logs will be inserted here -->
+                        </div>
+                        <button class="btn" style="background: #dc3545; color: white; margin-top: 15px;" onclick="clearAllData()">
+                            Clear All Data | 清除所有数据
+                        </button>
+                        <button class="btn" style="background: #28a745; color: white; margin-top: 10px;" onclick="exportData()">
+                            Export Data | 导出数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Caregiver Button -->
+            <div class="add-caregiver">
+                <button class="btn btn-add" onclick="addCaregiver()">
+                    + Add Caregiver | + 添加护工
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Caregiver Management Modal -->
+    <div id="caregiverModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Manage Caregivers | 管理护工</h2>
+            
+            <!-- Current Caregivers List -->
+            <h3>Current Caregivers | 当前护工</h3>
+            <div class="caregiver-list" id="caregiversList">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Add New Caregiver Form -->
+            <h3>Add New Caregiver | 添加新护工</h3>
+            <form id="caregiverForm" onsubmit="saveCaregiver(event)">
+                <div class="form-group">
+                    <label>English Name | 英文姓名:</label>
+                    <input type="text" id="englishName" required>
+                </div>
+                <div class="form-group">
+                    <label>Chinese Name | 中文姓名:</label>
+                    <input type="text" id="chineseName" required>
+                </div>
+                <div class="form-group">
+                    <label>Monthly Hours | 月工作小时:</label>
+                    <input type="number" id="monthlyHours" min="1" max="744" value="160" required>
+                </div>
+                <div class="form-group">
+                    <label>Hourly Rate | 时薪 ($):</label>
+                    <input type="number" id="hourlyRate" min="0" step="0.01" value="25.00">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;">
+                    <button type="submit" class="btn btn-add">
+                        Save | 保存
+                    </button>
+                    <button type="button" class="btn btn-close" onclick="closeCaregiverModal()">
+                        Close | 关闭
+                    </button>
+                </div>
+            </form>
+            
+            <input type="hidden" id="editingCaregiverId" value="">
+        </div>
+    </div>
+
+    <!-- Time Edit Modal -->
+    <div id="timeEditModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Time Entry | 编辑时间记录</h2>
+            
+            <form id="timeEditForm" onsubmit="saveTimeEdit(event)">
+                <div class="form-group">
+                    <label>Clock In Date & Time | 上班日期时间:</label>
+                    <input type="datetime-local" id="editClockIn" required>
+                </div>
+                <div class="form-group">
+                    <label>Clock Out Date & Time | 下班日期时间:</label>
+                    <input type="datetime-local" id="editClockOut">
+                </div>
+                <div class="form-group">
+                    <label>Notes | 备注:</label>
+                    <input type="text" id="editNotes">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;">
+                    <button type="submit" class="btn btn-add">
+                        Save Changes | 保存更改
+                    </button>
+                    <button type="button" class="btn btn-close" onclick="closeTimeEditModal()">
+                        Close | 关闭
+                    </button>
+                </div>
+            </form>
+            
+            <input type="hidden" id="editingTimeEntryId" value="">
+        </div>
+    </div>
+
+    <script>
+        // Data structure and initialization
+        let caregivers = JSON.parse(localStorage.getItem('caregivers') || '[]');
+        let timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+
+        // Initialize with sample data if empty
+        if (caregivers.length === 0) {
+            caregivers = [
+                {
+                    id: 'maria',
+                    englishName: 'Maria Chen',
+                    chineseName: '陈玛丽亚',
+                    monthlyHours: 160,
+                    hourlyRate: 25.00,
+                    isActive: true
+                }
+            ];
+            localStorage.setItem('caregivers', JSON.stringify(caregivers));
+        }
+
+        // Current time display
+        function updateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('currentTime').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Caregiver Management Functions
+        function openCaregiverManager() {
+            document.getElementById('caregiverModal').style.display = 'block';
+            loadCaregiversList();
+            clearCaregiverForm();
+        }
+
+        function closeCaregiverModal() {
+            document.getElementById('caregiverModal').style.display = 'none';
+        }
+
+        function loadCaregiversList() {
+            const list = document.getElementById('caregiversList');
+            if (caregivers.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #666;">No caregivers added yet | 暂无护工</p>';
+                return;
+            }
+
+            let html = '';
+            caregivers.forEach(caregiver => {
+                const worked = calculateWorkedHours(caregiver.id);
+                const remaining = Math.max(0, caregiver.monthlyHours - worked);
+                
+                html += `
+                    <div class="caregiver-item">
+                        <div class="caregiver-info">
+                            <strong>${caregiver.englishName} | ${caregiver.chineseName}</strong><br>
+                            <small>Monthly Hours | 月小时: ${caregiver.monthlyHours}h | Rate | 时薪: $${caregiver.hourlyRate}</small><br>
+                            <small>Worked | 已工作: ${worked.toFixed(1)}h | Remaining | 剩余: ${remaining.toFixed(1)}h</small>
+                        </div>
+                        <div class="caregiver-actions">
+                            <button class="btn btn-small" style="background: #ffc107;" onclick="editCaregiver('${caregiver.id}')">
+                                Edit | 编辑
+                            </button>
+                            <button class="btn btn-small" style="background: #dc3545; color: white;" onclick="deleteCaregiver('${caregiver.id}')">
+                                Delete | 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function saveCaregiver(event) {
+            event.preventDefault();
+            
+            const englishName = document.getElementById('englishName').value;
+            const chineseName = document.getElementById('chineseName').value;
+            const monthlyHours = parseInt(document.getElementById('monthlyHours').value);
+            const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
+            const editingId = document.getElementById('editingCaregiverId').value;
+            
+            if (editingId) {
+                // Edit existing caregiver
+                const index = caregivers.findIndex(c => c.id === editingId);
+                if (index !== -1) {
+                    caregivers[index] = { ...caregivers[index], englishName, chineseName, monthlyHours, hourlyRate };
+                }
+            } else {
+                // Add new caregiver
+                const newCaregiver = {
+                    id: Date.now().toString(),
+                    englishName,
+                    chineseName,
+                    monthlyHours,
+                    hourlyRate,
+                    isActive: true
+                };
+                caregivers.push(newCaregiver);
+            }
+            
+            localStorage.setItem('caregivers', JSON.stringify(caregivers));
+            loadCaregiversList();
+            clearCaregiverForm();
+            renderCaregiverCards();
+        }
+
+        function editCaregiver(caregiverId) {
+            const caregiver = caregivers.find(c => c.id === caregiverId);
+            if (caregiver) {
+                document.getElementById('englishName').value = caregiver.englishName;
+                document.getElementById('chineseName').value = caregiver.chineseName;
+                document.getElementById('monthlyHours').value = caregiver.monthlyHours;
+                document.getElementById('hourlyRate').value = caregiver.hourlyRate;
+                document.getElementById('editingCaregiverId').value = caregiverId;
+            }
+        }
+
+        function deleteCaregiver(caregiverId) {
+            if (confirm('Are you sure you want to delete this caregiver? This will also delete all their time entries.\n确定要删除此护工吗？这将同时删除其所有时间记录。')) {
+                caregivers = caregivers.filter(c => c.id !== caregiverId);
+                timeEntries = timeEntries.filter(e => e.caregiverId !== caregiverId);
+                localStorage.setItem('caregivers', JSON.stringify(caregivers));
+                localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+                loadCaregiversList();
+                renderCaregiverCards();
+            }
+        }
+
+        function clearCaregiverForm() {
+            document.getElementById('caregiverForm').reset();
+            document.getElementById('editingCaregiverId').value = '';
+            document.getElementById('monthlyHours').value = 160;
+            document.getElementById('hourlyRate').value = 25.00;
+        }
+
+        // Dynamic caregiver card rendering
+        function renderCaregiverCards() {
+            const container = document.getElementById('caregiversContainer');
+            
+            if (caregivers.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h3>No caregivers added yet | 暂无护工</h3>
+                        <p>Click "Manage Caregivers" to add your first caregiver<br>点击"管理护工"添加第一个护工</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            caregivers.forEach(caregiver => {
+                const currentEntry = getCurrentTimeEntry(caregiver.id);
+                const isClocked = currentEntry !== null;
+                const worked = calculateWorkedHours(caregiver.id);
+                const remaining = Math.max(0, caregiver.monthlyHours - worked);
+                
+                html += `
+                    <div class="caregiver-card">
+                        <div class="caregiver-name">
+                            ${caregiver.englishName} | ${caregiver.chineseName}
+                        </div>
+                        
+                        <div class="status-badge ${isClocked ? 'status-in' : 'status-out'}" id="status-${caregiver.id}">
+                            ${isClocked ? 'Clocked In | 已上班' : 'Clocked Out | 已下班'}
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-clock-in" onclick="clockIn('${caregiver.id}')" ${isClocked ? 'disabled style="opacity: 0.5;"' : ''}>
+                                Clock In<br>上班打卡
+                            </button>
+                            <button class="btn btn-clock-out" onclick="clockOut('${caregiver.id}')" ${!isClocked ? 'disabled style="opacity: 0.5;"' : ''}>
+                                Clock Out<br>下班打卡
+                            </button>
+                            <button class="btn btn-edit" onclick="showTimeEntries('${caregiver.id}')">
+                                Edit Time | 编辑时间
+                            </button>
+                        </div>
+
+                        <div class="hours-info">
+                            <div class="hours-card">
+                                <div class="hours-number" id="worked-${caregiver.id}">${worked.toFixed(1)}</div>
+                                <div class="hours-label">Hours Worked<br>已工作小时</div>
+                            </div>
+                            <div class="hours-card">
+                                <div class="hours-number" id="remaining-${caregiver.id}">${remaining.toFixed(1)}</div>
+                                <div class="hours-label">Hours Remaining<br>剩余小时</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Time tracking functions
+        function clockIn(caregiverId) {
+            // Check if already clocked in
+            if (getCurrentTimeEntry(caregiverId)) {
+                alert('Already clocked in | 已经上班打卡');
+                return;
+            }
+
+            const now = new Date();
+            const timeEntry = {
+                id: Date.now(),
+                caregiverId: caregiverId,
+                clockIn: now.toISOString(),
+                clockOut: null,
+                totalHours: null,
+                notes: ''
+            };
+            
+            timeEntries.push(timeEntry);
+            localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+            
+            renderCaregiverCards();
+            alert(`Clocked in at ${now.toLocaleTimeString()}\n上班打卡时间: ${now.toLocaleTimeString()}`);
+        }
+
+        function clockOut(caregiverId) {
+            const currentEntry = getCurrentTimeEntry(caregiverId);
+            if (!currentEntry) {
+                alert('Not currently clocked in | 未上班打卡');
+                return;
+            }
+
+            const now = new Date();
+            const clockIn = new Date(currentEntry.clockIn);
+            const totalHours = (now - clockIn) / (1000 * 60 * 60);
+            
+            currentEntry.clockOut = now.toISOString();
+            currentEntry.totalHours = totalHours;
+            
+            localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+            
+            renderCaregiverCards();
+            alert(`Clocked out at ${now.toLocaleTimeString()}\nTotal hours: ${totalHours.toFixed(2)}\n下班打卡时间: ${now.toLocaleTimeString()}\n总工作时间: ${totalHours.toFixed(2)}小时`);
+        }
+
+        function getCurrentTimeEntry(caregiverId) {
+            return timeEntries.find(entry => entry.caregiverId === caregiverId && !entry.clockOut) || null;
+        }
+
+        function calculateWorkedHours(caregiverId) {
+            const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+            return timeEntries
+                .filter(entry => 
+                    entry.caregiverId === caregiverId && 
+                    entry.totalHours && 
+                    entry.clockIn.startsWith(currentMonth)
+                )
+                .reduce((total, entry) => total + entry.totalHours, 0);
+        }
+
+        // Time editing functions
+        function showTimeEntries(caregiverId) {
+            const caregiver = caregivers.find(c => c.id === caregiverId);
+            const entries = timeEntries.filter(e => e.caregiverId === caregiverId);
+            
+            if (entries.length === 0) {
+                if (confirm('No time entries found for this caregiver. Would you like to add a manual entry?\n此护工暂无时间记录。是否要添加手动记录？')) {
+                    addManualTimeEntry(caregiverId);
+                }
+                return;
+            }
+            
+            let message = `Time Entries for ${caregiver.englishName} | ${caregiver.chineseName}:\n`;
+            message += `时间记录:\n\n`;
+            
+            entries.forEach((entry, index) => {
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                const duration = entry.totalHours ? entry.totalHours.toFixed(2) : 'In progress';
+                
+                message += `${index + 1}. ${clockIn.toLocaleDateString()} ${clockIn.toLocaleTimeString()}`;
+                if (clockOut) {
+                    message += ` → ${clockOut.toLocaleTimeString()} (${duration}h)`;
+                } else {
+                    message += ` → In progress | 进行中`;
+                }
+                message += `\n`;
+            });
+            
+            const action = prompt(message + '\nOptions | 选项:\n1. Add manual entry | 添加手动记录\n2. Edit last entry | 编辑最后记录\n3. Cancel | 取消\n\nEnter 1, 2, or 3:');
+            
+            if (action === '1') {
+                addManualTimeEntry(caregiverId);
+            } else if (action === '2' && entries.length > 0) {
+                editTimeEntry(entries[entries.length - 1]);
+            }
+        }
+
+        function addManualTimeEntry(caregiverId) {
+            document.getElementById('timeEditModal').style.display = 'block';
+            document.getElementById('editingTimeEntryId').value = '';
+            
+            // Set default times (today 9 AM to 5 PM)
+            const today = new Date();
+            const clockIn = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0);
+            const clockOut = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 17, 0);
+            
+            document.getElementById('editClockIn').value = formatDateTimeLocal(clockIn);
+            document.getElementById('editClockOut').value = formatDateTimeLocal(clockOut);
+            document.getElementById('editNotes').value = '';
+            
+            // Store caregiver ID for saving
+            window.currentEditingCaregiver = caregiverId;
+        }
+
+        function editTimeEntry(entry) {
+            document.getElementById('timeEditModal').style.display = 'block';
+            document.getElementById('editingTimeEntryId').value = entry.id;
+            
+            document.getElementById('editClockIn').value = formatDateTimeLocal(new Date(entry.clockIn));
+            document.getElementById('editClockOut').value = entry.clockOut ? formatDateTimeLocal(new Date(entry.clockOut)) : '';
+            document.getElementById('editNotes').value = entry.notes || '';
+            
+            window.currentEditingCaregiver = entry.caregiverId;
+        }
+
+        function saveTimeEdit(event) {
+            event.preventDefault();
+            
+            const entryId = document.getElementById('editingTimeEntryId').value;
+            const clockIn = new Date(document.getElementById('editClockIn').value);
+            const clockOutValue = document.getElementById('editClockOut').value;
+            const clockOut = clockOutValue ? new Date(clockOutValue) : null;
+            const notes = document.getElementById('editNotes').value;
+            
+            if (clockOut && clockOut <= clockIn) {
+                alert('Clock out time must be after clock in time | 下班时间必须晚于上班时间');
+                return;
+            }
+            
+            const totalHours = clockOut ? (clockOut - clockIn) / (1000 * 60 * 60) : null;
+            
+            if (entryId) {
+                // Edit existing entry
+                const index = timeEntries.findIndex(e => e.id == entryId);
+                if (index !== -1) {
+                    timeEntries[index] = {
+                        ...timeEntries[index],
+                        clockIn: clockIn.toISOString(),
+                        clockOut: clockOut ? clockOut.toISOString() : null,
+                        totalHours,
+                        notes
+                    };
+                }
+            } else {
+                // Add new entry
+                timeEntries.push({
+                    id: Date.now(),
+                    caregiverId: window.currentEditingCaregiver,
+                    clockIn: clockIn.toISOString(),
+                    clockOut: clockOut ? clockOut.toISOString() : null,
+                    totalHours,
+                    notes
+                });
+            }
+            
+            localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+            closeTimeEditModal();
+            renderCaregiverCards();
+            
+            alert('Time entry saved successfully | 时间记录保存成功');
+        }
+
+        function closeTimeEditModal() {
+            document.getElementById('timeEditModal').style.display = 'none';
+        }
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Report generation
+        function generateReport() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const monthName = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            
+            let reportHtml = `
+                <html>
+                <head>
+                    <title>Caregiver Report - ${monthName}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .summary { background-color: #f9f9f9; padding: 15px; margin: 20px 0; }
+                        @media print { body { margin: 10px; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Caregiver Time Report | 护工时间报告</h1>
+                        <h2>${monthName}</h2>
+                        <p>Generated on ${new Date().toLocaleDateString()} | 生成日期: ${new Date().toLocaleDateString()}</p>
+                    </div>
+            `;
+            
+            caregivers.forEach(caregiver => {
+                const entries = timeEntries.filter(e => e.caregiverId === caregiver.id && e.clockIn.startsWith(currentMonth));
+                const totalWorked = entries.reduce((sum, e) => sum + (e.totalHours || 0), 0);
+                const totalPay = totalWorked * caregiver.hourlyRate;
+                
+                reportHtml += `
+                    <div class="summary">
+                        <h3>${caregiver.englishName} | ${caregiver.chineseName}</h3>
+                        <p>Monthly Allocation | 月分配: ${caregiver.monthlyHours} hours | 小时</p>
+                        <p>Hours Worked | 已工作: ${totalWorked.toFixed(2)} hours | 小时</p>
+                        <p>Hours Remaining | 剩余: ${Math.max(0, caregiver.monthlyHours - totalWorked).toFixed(2)} hours | 小时</p>
+                        <p>Total Pay | 总工资: $${totalPay.toFixed(2)} (@ $${caregiver.hourlyRate}/hour)</p>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date | 日期</th>
+                                <th>Clock In | 上班</th>
+                                <th>Clock Out | 下班</th>
+                                <th>Hours | 小时</th>
+                                <th>Notes | 备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                entries.forEach(entry => {
+                    const clockIn = new Date(entry.clockIn);
+                    const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                    
+                    reportHtml += `
+                        <tr>
+                            <td>${clockIn.toLocaleDateString()}</td>
+                            <td>${clockIn.toLocaleTimeString()}</td>
+                            <td>${clockOut ? clockOut.toLocaleTimeString() : 'In Progress'}</td>
+                            <td>${entry.totalHours ? entry.totalHours.toFixed(2) : '-'}</td>
+                            <td>${entry.notes || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                reportHtml += '</tbody></table>';
+            });
+            
+            reportHtml += '</body></html>';
+            
+            // Open in new window for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(reportHtml);
+            printWindow.document.close();
+            printWindow.focus();
+            
+            setTimeout(() => {
+                if (confirm('Print report now? | 现在打印报告吗？')) {
+                    printWindow.print();
+                }
+            }, 500);
+        }
+        function toggleDataView() {
+            const dataView = document.getElementById('timeLogsView');
+            if (dataView.style.display === 'none') {
+                dataView.style.display = 'block';
+                loadTimeLogsList();
+            } else {
+                dataView.style.display = 'none';
+            }
+        }
+
+        function loadTimeLogsList() {
+            const timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+            const logsList = document.getElementById('timeLogsList');
+            
+            if (timeEntries.length === 0) {
+                logsList.innerHTML = '<p style="text-align: center; color: #666;">No time entries yet | 暂无时间记录</p>';
+                return;
+            }
+
+            let html = '';
+            timeEntries.forEach((entry, index) => {
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                const duration = entry.totalHours ? entry.totalHours.toFixed(1) : 'In progress';
+                
+                html += `
+                    <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #2196F3;">
+                        <strong>${entry.caregiverId}</strong><br>
+                        <small>Clock In | 上班: ${clockIn.toLocaleString()}</small><br>
+                        ${clockOut ? `<small>Clock Out | 下班: ${clockOut.toLocaleString()}</small><br>` : '<small style="color: #28a745;">Currently clocked in | 正在上班</small><br>'}
+                        <small>Duration | 时长: ${duration} hours | 小时</small>
+                    </div>
+                `;
+            });
+            
+            logsList.innerHTML = html;
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.\n确定要清除所有数据吗？此操作无法撤销。')) {
+                localStorage.removeItem('timeEntries');
+                localStorage.removeItem('caregivers');
+                loadTimeLogsList();
+                updateHoursDisplay('maria');
+                alert('All data cleared | 所有数据已清除');
+            }
+        }
+
+        function exportData() {
+            const timeEntries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+            const caregivers = JSON.parse(localStorage.getItem('caregivers') || '[]');
+            
+            const data = {
+                exportDate: new Date().toISOString(),
+                timeEntries: timeEntries,
+                caregivers: caregivers
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `caregiver-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            alert('Data exported successfully | 数据导出成功');
+        }
+
+        // Data viewing functions
+        function toggleDataView() {
+            const dataView = document.getElementById('timeLogsView');
+            if (dataView.style.display === 'none') {
+                dataView.style.display = 'block';
+                loadTimeLogsList();
+            } else {
+                dataView.style.display = 'none';
+            }
+        }
+
+        function loadTimeLogsList() {
+            const logsList = document.getElementById('timeLogsList');
+            
+            if (timeEntries.length === 0) {
+                logsList.innerHTML = '<p style="text-align: center; color: #666;">No time entries yet | 暂无时间记录</p>';
+                return;
+            }
+
+            let html = '';
+            timeEntries.forEach((entry, index) => {
+                const caregiver = caregivers.find(c => c.id === entry.caregiverId);
+                const caregiverName = caregiver ? `${caregiver.englishName} | ${caregiver.chineseName}` : entry.caregiverId;
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                const duration = entry.totalHours ? entry.totalHours.toFixed(1) : 'In progress';
+                
+                html += `
+                    <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #2196F3;">
+                        <strong>${caregiverName}</strong><br>
+                        <small>Clock In | 上班: ${clockIn.toLocaleString()}</small><br>
+                        ${clockOut ? `<small>Clock Out | 下班: ${clockOut.toLocaleString()}</small><br>` : '<small style="color: #28a745;">Currently clocked in | 正在上班</small><br>'}
+                        <small>Duration | 时长: ${duration} hours | 小时</small><br>
+                        ${entry.notes ? `<small>Notes | 备注: ${entry.notes}</small><br>` : ''}
+                        <button class="btn btn-small" style="background: #ffc107; margin-top: 5px;" onclick="editTimeEntry(${JSON.stringify(entry).replace(/"/g, '&quot;')})">
+                            Edit | 编辑
+                        </button>
+                    </div>
+                `;
+            });
+            
+            logsList.innerHTML = html;
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.\n确定要清除所有数据吗？此操作无法撤销。')) {
+                localStorage.removeItem('timeEntries');
+                localStorage.removeItem('caregivers');
+                timeEntries = [];
+                caregivers = [];
+                loadTimeLogsList();
+                renderCaregiverCards();
+                alert('All data cleared | 所有数据已清除');
+            }
+        }
+
+        function exportData() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                timeEntries: timeEntries,
+                caregivers: caregivers
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `caregiver-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            alert('Data exported successfully | 数据导出成功');
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const caregiverModal = document.getElementById('caregiverModal');
+            const timeEditModal = document.getElementById('timeEditModal');
+            
+            if (event.target === caregiverModal) {
+                closeCaregiverModal();
+            }
+            if (event.target === timeEditModal) {
+                closeTimeEditModal();
+            }
+        }
+
+        // Initialize app
+        function initializeApp() {
+            updateTime();
+            setInterval(updateTime, 60000); // Update every minute
+            renderCaregiverCards();
+        }
+
+        // Start the app when page loads
+        window.addEventListener('load', initializeApp);
+    </script>
 </body>
 </html>
