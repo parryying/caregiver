@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { createDatabase } = require('./database');
 require('dotenv').config();
 
 const app = express();
@@ -16,44 +16,135 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Serve static files (frontend)
 app.use(express.static(path.join(__dirname, '../')));
 
-// Health check endpoint for Render
+// Health and status endpoints
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Caregiver app is running' });
 });
 
-// Database setup
-const dbPath = path.join(__dirname, 'caregiver.db');
-const db = new sqlite3.Database(dbPath);
-
-// Initialize database tables
-db.serialize(() => {
-    // Caregivers table
-    db.run(`CREATE TABLE IF NOT EXISTS caregivers (
-        id TEXT PRIMARY KEY,
-        englishName TEXT NOT NULL,
-        chineseName TEXT NOT NULL,
-        monthlyHours INTEGER NOT NULL DEFAULT 160,
-        hourlyRate REAL NOT NULL DEFAULT 25.00,
-        isActive BOOLEAN DEFAULT 1,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Time entries table
-    db.run(`CREATE TABLE IF NOT EXISTS time_entries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        caregiverId TEXT NOT NULL,
-        clockIn DATETIME NOT NULL,
-        clockOut DATETIME,
-        totalHours REAL,
-        notes TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (caregiverId) REFERENCES caregivers(id)
-    )`);
-
-    console.log('Database tables initialized');
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        database: 'connected'
+    });
 });
+
+// Database backup and restore endpoints
+app.get('/api/backup', (req, res) => {
+    try {
+        // Get all caregivers
+        db.all('SELECT * FROM caregivers ORDER BY createdAt', (err, caregivers) => {
+            if (err) {
+                console.error('Error backing up caregivers:', err);
+                return res.status(500).json({ error: 'Failed to backup caregivers' });
+            }
+
+            // Get all time entries
+            db.all('SELECT * FROM time_entries ORDER BY createdAt', (err, timeEntries) => {
+                if (err) {
+                    console.error('Error backing up time entries:', err);
+                    return res.status(500).json({ error: 'Failed to backup time entries' });
+                }
+
+                const backup = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    caregivers: caregivers,
+                    timeEntries: timeEntries,
+                    totalCaregivers: caregivers.length,
+                    totalTimeEntries: timeEntries.length
+                };
+
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Content-Disposition', `attachment; filename="caregiver-backup-${new Date().toISOString().split('T')[0]}.json"`);
+                res.json(backup);
+            });
+        });
+    } catch (error) {
+        console.error('Backup error:', error);
+        res.status(500).json({ error: 'Internal server error during backup' });
+    }
+});
+
+app.post('/api/restore', (req, res) => {
+    try {
+        const { caregivers, timeEntries } = req.body;
+        
+        if (!caregivers || !timeEntries) {
+            return res.status(400).json({ error: 'Invalid backup format. Missing caregivers or timeEntries.' });
+        }
+
+        db.serialize(() => {
+            // Clear existing data
+            db.run('DELETE FROM time_entries', (err) => {
+                if (err) {
+                    console.error('Error clearing time entries:', err);
+                    return res.status(500).json({ error: 'Failed to clear existing time entries' });
+                }
+
+                db.run('DELETE FROM caregivers', (err) => {
+                    if (err) {
+                        console.error('Error clearing caregivers:', err);
+                        return res.status(500).json({ error: 'Failed to clear existing caregivers' });
+                    }
+
+                    // Restore caregivers
+                    const caregiverInsert = db.prepare(`
+                        INSERT INTO caregivers (id, englishName, chineseName, monthlyHours, hourlyRate, isActive, createdAt, updatedAt)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `);
+
+                    caregivers.forEach(caregiver => {
+                        caregiverInsert.run([
+                            caregiver.id,
+                            caregiver.englishName,
+                            caregiver.chineseName,
+                            caregiver.monthlyHours,
+                            caregiver.hourlyRate,
+                            caregiver.isActive,
+                            caregiver.createdAt || new Date().toISOString(),
+                            caregiver.updatedAt || new Date().toISOString()
+                        ]);
+                    });
+                    caregiverInsert.finalize();
+
+                    // Restore time entries
+                    const timeEntryInsert = db.prepare(`
+                        INSERT INTO time_entries (id, caregiverId, clockIn, clockOut, totalHours, notes, createdAt, updatedAt)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `);
+
+                    timeEntries.forEach(entry => {
+                        timeEntryInsert.run([
+                            entry.id,
+                            entry.caregiverId,
+                            entry.clockIn,
+                            entry.clockOut,
+                            entry.totalHours,
+                            entry.notes || '',
+                            entry.createdAt || new Date().toISOString(),
+                            entry.updatedAt || new Date().toISOString()
+                        ]);
+                    });
+                    timeEntryInsert.finalize();
+
+                    res.json({ 
+                        success: true, 
+                        message: 'Database restored successfully',
+                        restoredCaregivers: caregivers.length,
+                        restoredTimeEntries: timeEntries.length
+                    });
+                });
+            });
+        });
+    } catch (error) {
+        console.error('Restore error:', error);
+        res.status(500).json({ error: 'Internal server error during restore' });
+    }
+});
+
+// Database setup using the new database module
+const db = createDatabase();
 
 // API Routes
 
@@ -358,19 +449,67 @@ app.get('/api/summary/:month', (req, res) => {
     });
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        database: 'connected'
-    });
-});
-
 // Serve frontend
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../index.html'));
 });
+
+// Automatic backup functionality
+function createAutomaticBackup() {
+    try {
+        const fs = require('fs');
+        const backupDir = path.join(__dirname, 'backups');
+        
+        // Create backups directory if it doesn't exist
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+        }
+
+        // Get all data
+        db.all('SELECT * FROM caregivers ORDER BY createdAt', (err, caregivers) => {
+            if (err) {
+                console.error('Auto backup error - caregivers:', err);
+                return;
+            }
+
+            db.all('SELECT * FROM time_entries ORDER BY createdAt', (err, timeEntries) => {
+                if (err) {
+                    console.error('Auto backup error - time entries:', err);
+                    return;
+                }
+
+                const backup = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    caregivers: caregivers,
+                    timeEntries: timeEntries,
+                    totalCaregivers: caregivers.length,
+                    totalTimeEntries: timeEntries.length
+                };
+
+                const filename = `auto-backup-${new Date().toISOString().split('T')[0]}.json`;
+                const filepath = path.join(backupDir, filename);
+                
+                fs.writeFileSync(filepath, JSON.stringify(backup, null, 2));
+                console.log(`✅ Automatic backup created: ${filename}`);
+            });
+        });
+    } catch (error) {
+        console.error('❌ Automatic backup failed:', error);
+    }
+}
+
+// Schedule automatic backups every 6 hours
+setInterval(() => {
+    console.log('🔄 Creating automatic backup...');
+    createAutomaticBackup();
+}, 6 * 60 * 60 * 1000); // 6 hours
+
+// Create initial backup on startup
+setTimeout(() => {
+    console.log('🚀 Creating startup backup...');
+    createAutomaticBackup();
+}, 5000); // Wait 5 seconds after startup
 
 // Error handling middleware
 app.use((err, req, res, next) => {

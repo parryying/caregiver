@@ -304,9 +304,50 @@
                 padding: 20px;
             }
         }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2196F3;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            max-width: 300px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.warning {
+            background: #ff9800;
+        }
+
+        .notification.success {
+            background: #4caf50;
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
+    <!-- Notification system -->
+    <div id="notification" class="notification"></div>
+
     <div class="container">
         <div class="header">
             <h1>Caregiver Time Tracker<br>护工时间追踪</h1>
@@ -325,6 +366,16 @@
                 </button>
                 <button class="btn btn-settings" onclick="generateReport()">
                     Generate Report<br>生成报告
+                </button>
+            </div>
+
+            <!-- Backup Management Section -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                <button class="btn" style="background: #28a745; color: white;" onclick="downloadBackup()">
+                    📥 Download Backup<br>下载备份
+                </button>
+                <button class="btn" style="background: #fd7e14; color: white;" onclick="showRestoreModal()">
+                    📤 Restore Data<br>恢复数据
                 </button>
             </div>
 
@@ -442,6 +493,35 @@
         </div>
     </div>
 
+    <!-- Restore Data Modal -->
+    <div id="restoreModal" class="modal">
+        <div class="modal-content">
+            <h2>Restore Database | 恢复数据库</h2>
+            <p style="color: #dc3545; font-weight: bold;">⚠️ Warning: This will replace ALL current data!</p>
+            <p style="color: #dc3545;">警告：这将替换所有当前数据！</p>
+            
+            <div class="form-group">
+                <label>Select Backup File | 选择备份文件:</label>
+                <input type="file" id="restoreFile" accept=".json" style="width: 100%; padding: 10px; border: 2px dashed #ddd; border-radius: 8px;">
+                <small style="color: #666;">Only JSON backup files are supported | 仅支持JSON备份文件</small>
+            </div>
+            
+            <div id="restorePreview" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; display: none;">
+                <h4>Backup Preview | 备份预览:</h4>
+                <div id="restoreInfo"></div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;">
+                <button type="button" class="btn" style="background: #dc3545; color: white;" onclick="performRestore()" id="restoreBtn" disabled>
+                    Restore Data | 恢复数据
+                </button>
+                <button type="button" class="btn btn-close" onclick="closeRestoreModal()">
+                    Cancel | 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Data structure and initialization
         let caregivers = [];
@@ -449,27 +529,6 @@
 
         // API Helper Functions
         const API_BASE = window.location.origin;
-
-        async function apiCall(endpoint, options = {}) {
-            try {
-                const response = await fetch(`${API_BASE}/api${endpoint}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    ...options
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('API call failed:', error);
-                throw error;
-            }
-        }
 
         // Load data from API
         async function loadDataFromAPI() {
@@ -1127,16 +1186,101 @@
             alert('Data exported successfully | 数据导出成功');
         }
 
+        // Advanced Backup and Restore Functions
+        function downloadBackup() {
+            window.open(`${API_BASE}/api/backup`, '_blank');
+        }
+
+        function showRestoreModal() {
+            document.getElementById('restoreModal').style.display = 'block';
+            
+            // Setup file input handler
+            const fileInput = document.getElementById('restoreFile');
+            fileInput.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file && file.type === 'application/json') {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const backupData = JSON.parse(e.target.result);
+                            showRestorePreview(backupData);
+                        } catch (error) {
+                            alert('Invalid backup file format | 备份文件格式无效');
+                            fileInput.value = '';
+                        }
+                    };
+                    reader.readAsText(file);
+                } else {
+                    alert('Please select a valid JSON backup file | 请选择有效的JSON备份文件');
+                    fileInput.value = '';
+                }
+            };
+        }
+
+        function showRestorePreview(backupData) {
+            const preview = document.getElementById('restorePreview');
+            const info = document.getElementById('restoreInfo');
+            
+            info.innerHTML = `
+                <p><strong>Backup Date:</strong> ${new Date(backupData.timestamp).toLocaleString()}</p>
+                <p><strong>Caregivers:</strong> ${backupData.totalCaregivers || backupData.caregivers?.length || 0}</p>
+                <p><strong>Time Entries:</strong> ${backupData.totalTimeEntries || backupData.timeEntries?.length || 0}</p>
+                <p><strong>Version:</strong> ${backupData.version || 'Unknown'}</p>
+            `;
+            
+            preview.style.display = 'block';
+            document.getElementById('restoreBtn').disabled = false;
+            
+            // Store backup data for restore
+            window.pendingRestore = backupData;
+        }
+
+        async function performRestore() {
+            if (!window.pendingRestore) {
+                alert('No backup data loaded | 未加载备份数据');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to restore this backup? ALL current data will be lost!\n确定要恢复此备份吗？所有当前数据将丢失！')) {
+                return;
+            }
+
+            try {
+                await apiCall('/restore', {
+                    method: 'POST',
+                    body: JSON.stringify(window.pendingRestore)
+                });
+
+                alert('Database restored successfully! | 数据库恢复成功！');
+                closeRestoreModal();
+                loadDataFromAPI(); // Reload the UI
+            } catch (error) {
+                alert('Failed to restore backup: ' + error.message);
+            }
+        }
+
+        function closeRestoreModal() {
+            document.getElementById('restoreModal').style.display = 'none';
+            document.getElementById('restoreFile').value = '';
+            document.getElementById('restorePreview').style.display = 'none';
+            document.getElementById('restoreBtn').disabled = true;
+            window.pendingRestore = null;
+        }
+
         // Close modals when clicking outside
         window.onclick = function(event) {
             const caregiverModal = document.getElementById('caregiverModal');
             const timeEditModal = document.getElementById('timeEditModal');
+            const restoreModal = document.getElementById('restoreModal');
             
             if (event.target === caregiverModal) {
                 closeCaregiverModal();
             }
             if (event.target === timeEditModal) {
                 closeTimeEditModal();
+            }
+            if (event.target === restoreModal) {
+                closeRestoreModal();
             }
         }
 
@@ -1145,6 +1289,67 @@
             updateTime();
             setInterval(updateTime, 60000); // Update every minute
             loadDataFromAPI(); // Load from API instead of localStorage
+            checkBackupReminder(); // Check if backup reminder is needed
+        }
+
+        // Notification system
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Backup reminder system
+        function checkBackupReminder() {
+            const lastBackupReminder = localStorage.getItem('lastBackupReminder');
+            const now = new Date();
+            const reminderInterval = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+            
+            if (!lastBackupReminder || (now.getTime() - parseInt(lastBackupReminder)) > reminderInterval) {
+                setTimeout(() => {
+                    showNotification(
+                        '💾 Reminder: Consider downloading a backup of your data | 提醒：建议下载数据备份',
+                        'warning',
+                        10000
+                    );
+                }, 5000); // Show reminder 5 seconds after app loads
+                
+                localStorage.setItem('lastBackupReminder', now.getTime().toString());
+            }
+        }
+
+        // Enhanced API call with better error handling and notifications
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}/api${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                
+                // Show appropriate error message
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showNotification('⚠️ Connection lost. Check your internet connection. | 连接丢失，请检查网络。', 'error');
+                } else {
+                    showNotification(`❌ Error: ${error.message}`, 'error');
+                }
+                
+                throw error;
+            }
         }
 
         // Start the app when page loads
