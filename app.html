@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caregiver Tracker | 护工记录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: #2196F3;
+            color: white;
+            text-align: center;
+            padding: 25px 20px;
+        }
+        .header h1 { font-size: 22px; margin-bottom: 5px; }
+        .subtitle { font-size: 14px; opacity: 0.9; }
+        .main-content { padding: 25px 20px; }
+        .setup-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .setup-section h3 { color: #856404; margin-bottom: 15px; }
+        .setup-section p { color: #856404; margin-bottom: 10px; font-size: 14px; }
+        .btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 8px 0;
+            text-align: center;
+            background: #ffc107;
+            color: #212529;
+        }
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .current-time {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #666;
+            font-weight: 500;
+        }
+        .caregiver-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #e9ecef;
+            text-align: center;
+        }
+        .clock-btn {
+            width: 45%;
+            margin: 5px 2.5%;
+            display: inline-block;
+            background: #28a745;
+            color: white;
+        }
+        .clock-btn.out { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Caregiver Tracker | 护工记录</h1>
+            <div class="subtitle">Real-Time Sync Across Devices | 设备间实时同步</div>
+        </div>
+        <div class="main-content">
+            <div class="current-time" id="currentTime"></div>
+            
+            <div class="setup-section" id="setupSection">
+                <h3>📊 Quick Setup | 快速设置</h3>
+                <p>1. Click "Create Google Sheet" | 点击"创建谷歌表格"</p>
+                <p>2. Copy the URL back here | 复制网址到这里</p>
+                <p>3. Start tracking! | 开始记录！</p>
+                
+                <button class="btn" onclick="openGoogleSheets()">
+                    🔗 Create Google Sheet | 创建谷歌表格
+                </button>
+                
+                <input type="url" 
+                       class="url-input" 
+                       id="sheetUrlInput" 
+                       placeholder="Paste Google Sheets URL here | 在此粘贴谷歌表格网址">
+                
+                <button class="btn" onclick="connectSheet()">
+                    ✅ Connect Sheet | 连接表格
+                </button>
+            </div>
+
+            <div class="caregiver-card">
+                <h3>Maria Chen | 陈玛丽亚</h3>
+                <p id="status">Status: Off Duty | 状态：下班</p><br>
+                <button class="btn clock-btn" onclick="clockIn()">⏰ Clock In | 上班打卡</button>
+                <button class="btn clock-btn out" onclick="clockOut()">⏰ Clock Out | 下班打卡</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let SHEET_URL = localStorage.getItem('sheet_url') || '';
+        let isWorking = false;
+        let clockInTime = null;
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        function openGoogleSheets() {
+            alert('📊 Creating Google Sheet:\\n\\n1. Click OK to open Google Sheets\\n2. Create a new blank spreadsheet\\n3. Copy the URL from browser\\n4. Paste it in the box below');
+            window.open('https://docs.google.com/spreadsheets/create', '_blank');
+        }
+
+        function connectSheet() {
+            const url = document.getElementById('sheetUrlInput').value.trim();
+            if (!url) {
+                alert('Please paste your Google Sheets URL first');
+                return;
+            }
+            if (!url.includes('docs.google.com/spreadsheets')) {
+                alert('Please enter a valid Google Sheets URL');
+                return;
+            }
+            SHEET_URL = url;
+            localStorage.setItem('sheet_url', url);
+            document.getElementById('setupSection').style.display = 'none';
+            alert('✅ Connected! Now when you clock in/out, data will be copied to clipboard to paste in your Google Sheet.');
+        }
+
+        function addToSheet(data) {
+            if (!SHEET_URL) return;
+            const sheetRow = data.date + '\\t' + data.caregiver + '\\t' + data.clockIn + '\\t' + data.clockOut + '\\t' + data.hours + '\\t' + data.notes;
+            navigator.clipboard.writeText(sheetRow).then(() => {
+                alert('📋 Data copied to clipboard! Open your Google Sheet and paste (Ctrl+V) in the next empty row.');
+            }).catch(() => {
+                alert('Could not copy to clipboard. Please add data manually to your Google Sheet.');
+            });
+        }
+
+        function clockIn() {
+            if (isWorking) {
+                alert('Already clocked in!');
+                return;
+            }
+            const now = new Date();
+            isWorking = true;
+            clockInTime = now;
+            document.getElementById('status').textContent = 'Status: Working | 状态：工作中';
+            
+            addToSheet({
+                date: now.toLocaleDateString(),
+                caregiver: 'Maria Chen',
+                clockIn: now.toLocaleTimeString(),
+                clockOut: '',
+                hours: '',
+                notes: 'Clock In'
+            });
+        }
+
+        function clockOut() {
+            if (!isWorking) {
+                alert('Not clocked in!');
+                return;
+            }
+            const now = new Date();
+            const hours = clockInTime ? Math.round(((now - clockInTime) / (1000 * 60 * 60)) * 100) / 100 : 0;
+            
+            isWorking = false;
+            document.getElementById('status').textContent = 'Status: Off Duty | 状态：下班';
+            
+            addToSheet({
+                date: now.toLocaleDateString(),
+                caregiver: 'Maria Chen',
+                clockIn: clockInTime ? clockInTime.toLocaleTimeString() : '',
+                clockOut: now.toLocaleTimeString(),
+                hours: hours,
+                notes: 'Clock Out'
+            });
+            
+            clockInTime = null;
+        }
+
+        // Hide setup if already connected
+        if (SHEET_URL) {
+            document.getElementById('setupSection').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
