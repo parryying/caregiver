@@ -1,0 +1,44 @@
+# Dependencies
+backend/node_modules/
+node_modules/
+
+# Database
+backend/caregiver.db
+*.db
+*.sqlite
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+build/
+dist/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Package lock files (let cloud regenerate)
+backend/package-lock.json
