@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Caregiver Tracker | 简易护工记录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .main-content {
+            padding: 30px 20px;
+        }
+
+        .caregiver-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .caregiver-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .status-in { background: #d4edda; color: #155724; }
+        .status-out { background: #f8d7da; color: #721c24; }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .btn-clock-in { background: #28a745; color: white; }
+        .btn-clock-out { background: #dc3545; color: white; }
+        .btn-export { background: #17a2b8; color: white; }
+        .btn-sheets { background: #0f9d58; color: white; }
+
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .hours-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .hours-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .hours-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .hours-label {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .simple-setup {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .current-time {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .header { padding: 20px 15px; }
+            .main-content { padding: 20px 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Simple Caregiver Tracker<br>简易护工记录</h1>
+        </div>
+
+        <div class="main-content">
+            <div class="current-time" id="currentTime"></div>
+
+            <div class="simple-setup">
+                <h3>📊 Data Storage | 数据存储</h3>
+                <p><strong>✅ Simple & Reliable | 简单可靠</strong></p>
+                <p>• All data saved in your browser | 所有数据保存在浏览器中</p>
+                <p>• Export to Excel/Sheets anytime | 随时导出到Excel/表格</p>
+                <p>• No complex servers needed | 无需复杂服务器</p>
+            </div>
+
+            <!-- Caregiver Cards -->
+            <div id="caregiversContainer"></div>
+
+            <!-- Export Options -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                <button class="btn btn-export" onclick="exportToExcel()">
+                    📊 Export Excel<br>导出Excel
+                </button>
+                <button class="btn btn-sheets" onclick="copyForSheets()">
+                    📋 Copy for Sheets<br>复制到表格
+                </button>
+            </div>
+
+            <!-- Add Caregiver -->
+            <button class="btn btn-sheets" onclick="addCaregiver()">
+                + Add Caregiver | + 添加护工
+            </button>
+
+            <!-- Data Management -->
+            <details style="margin-top: 20px;">
+                <summary style="padding: 10px; background: #f8f9fa; border-radius: 5px; cursor: pointer;">
+                    🔧 Advanced Options | 高级选项
+                </summary>
+                <div style="padding: 15px; background: #f8f9fa; margin-top: 5px; border-radius: 0 0 5px 5px;">
+                    <button class="btn" style="background: #ffc107; color: #212529;" onclick="viewAllData()">
+                        📋 View All Records | 查看所有记录
+                    </button>
+                    <button class="btn" style="background: #dc3545; color: white;" onclick="clearAllData()">
+                        🗑️ Clear All Data | 清除所有数据
+                    </button>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <script>
+        // Simple localStorage data management
+        let caregivers = JSON.parse(localStorage.getItem('simple_caregivers') || '[]');
+        let timeEntries = JSON.parse(localStorage.getItem('simple_time_entries') || '[]');
+
+        // Initialize with sample data
+        if (caregivers.length === 0) {
+            caregivers = [{
+                id: 'maria-' + Date.now(),
+                name: 'Maria Chen | 陈玛丽亚',
+                monthlyHours: 160,
+                hourlyRate: 25
+            }];
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem('simple_caregivers', JSON.stringify(caregivers));
+            localStorage.setItem('simple_time_entries', JSON.stringify(timeEntries));
+        }
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+        }
+
+        function clockIn(caregiverId) {
+            const existing = timeEntries.find(e => e.caregiverId === caregiverId && !e.clockOut);
+            if (existing) {
+                alert('Already clocked in! | 已经上班打卡！');
+                return;
+            }
+
+            const entry = {
+                id: Date.now(),
+                caregiverId,
+                clockIn: new Date().toISOString(),
+                clockOut: null,
+                hours: 0
+            };
+
+            timeEntries.push(entry);
+            saveData();
+            renderCaregivers();
+            alert('Clocked in successfully! | 上班打卡成功！');
+        }
+
+        function clockOut(caregiverId) {
+            const entry = timeEntries.find(e => e.caregiverId === caregiverId && !e.clockOut);
+            if (!entry) {
+                alert('Not clocked in! | 未上班打卡！');
+                return;
+            }
+
+            const now = new Date();
+            const clockIn = new Date(entry.clockIn);
+            const hours = (now - clockIn) / (1000 * 60 * 60);
+
+            entry.clockOut = now.toISOString();
+            entry.hours = Math.round(hours * 100) / 100;
+
+            saveData();
+            renderCaregivers();
+            alert(`Clocked out! Worked ${entry.hours} hours | 下班打卡！工作了${entry.hours}小时`);
+        }
+
+        function getWorkedHours(caregiverId) {
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            return timeEntries
+                .filter(e => e.caregiverId === caregiverId && e.clockIn.startsWith(thisMonth) && e.hours)
+                .reduce((total, e) => total + e.hours, 0);
+        }
+
+        function renderCaregivers() {
+            const container = document.getElementById('caregiversContainer');
+            
+            container.innerHTML = caregivers.map(caregiver => {
+                const isClocked = timeEntries.find(e => e.caregiverId === caregiver.id && !e.clockOut);
+                const worked = getWorkedHours(caregiver.id);
+                const remaining = Math.max(0, caregiver.monthlyHours - worked);
+
+                return `
+                    <div class="caregiver-card">
+                        <div class="caregiver-name">${caregiver.name}</div>
+                        <div class="status-badge ${isClocked ? 'status-in' : 'status-out'}">
+                            ${isClocked ? 'Working | 工作中' : 'Off Duty | 下班'}
+                        </div>
+                        
+                        <button class="btn btn-clock-in" onclick="clockIn('${caregiver.id}')" ${isClocked ? 'disabled' : ''}>
+                            ⏰ Clock In | 上班打卡
+                        </button>
+                        <button class="btn btn-clock-out" onclick="clockOut('${caregiver.id}')" ${!isClocked ? 'disabled' : ''}>
+                            ⏰ Clock Out | 下班打卡
+                        </button>
+
+                        <div class="hours-info">
+                            <div class="hours-card">
+                                <div class="hours-number">${worked.toFixed(1)}</div>
+                                <div class="hours-label">Worked | 已工作</div>
+                            </div>
+                            <div class="hours-card">
+                                <div class="hours-number">${remaining.toFixed(1)}</div>
+                                <div class="hours-label">Remaining | 剩余</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addCaregiver() {
+            const name = prompt('Enter caregiver name (English | Chinese) | 输入护工姓名（英文｜中文）:');
+            if (!name) return;
+
+            const hours = parseInt(prompt('Monthly hours | 月工作小时:', '160'));
+            if (!hours) return;
+
+            caregivers.push({
+                id: Date.now().toString(),
+                name: name,
+                monthlyHours: hours,
+                hourlyRate: 25
+            });
+
+            saveData();
+            renderCaregivers();
+        }
+
+        function exportToExcel() {
+            let csv = 'Date,Caregiver,Clock In,Clock Out,Hours\\n';
+            
+            timeEntries.forEach(entry => {
+                const caregiver = caregivers.find(c => c.id === entry.caregiverId);
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                
+                csv += `${clockIn.toLocaleDateString()},${caregiver?.name || 'Unknown'},${clockIn.toLocaleTimeString()},${clockOut ? clockOut.toLocaleTimeString() : 'In Progress'},${entry.hours || ''}\\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `caregiver-hours-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            
+            alert('Excel file downloaded! | Excel文件已下载！');
+        }
+
+        function copyForSheets() {
+            let text = 'Date\\tCaregiver\\tClock In\\tClock Out\\tHours\\n';
+            
+            timeEntries.forEach(entry => {
+                const caregiver = caregivers.find(c => c.id === entry.caregiverId);
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                
+                text += `${clockIn.toLocaleDateString()}\\t${caregiver?.name || 'Unknown'}\\t${clockIn.toLocaleTimeString()}\\t${clockOut ? clockOut.toLocaleTimeString() : 'In Progress'}\\t${entry.hours || ''}\\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Data copied! Paste into Google Sheets | 数据已复制！粘贴到Google表格中');
+            });
+        }
+
+        function viewAllData() {
+            const summary = timeEntries.map(entry => {
+                const caregiver = caregivers.find(c => c.id === entry.caregiverId);
+                const clockIn = new Date(entry.clockIn);
+                const clockOut = entry.clockOut ? new Date(entry.clockOut) : null;
+                
+                return `${clockIn.toLocaleDateString()} ${caregiver?.name}: ${clockIn.toLocaleTimeString()} - ${clockOut ? clockOut.toLocaleTimeString() : 'Working'} (${entry.hours || '0'} hrs)`;
+            }).join('\\n');
+
+            alert(summary || 'No records yet | 暂无记录');
+        }
+
+        function clearAllData() {
+            if (confirm('Delete all data? This cannot be undone! | 删除所有数据？此操作无法撤销！')) {
+                localStorage.removeItem('simple_caregivers');
+                localStorage.removeItem('simple_time_entries');
+                caregivers = [];
+                timeEntries = [];
+                renderCaregivers();
+                alert('All data cleared | 所有数据已清除');
+            }
+        }
+
+        // Initialize
+        setInterval(updateTime, 1000);
+        updateTime();
+        renderCaregivers();
+    </script>
+</body>
+</html>
