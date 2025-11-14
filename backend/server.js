@@ -16,6 +16,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Serve static files (frontend)
 app.use(express.static(path.join(__dirname, '../')));
 
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Caregiver app is running' });
+});
+
 // Database setup
 const dbPath = path.join(__dirname, 'caregiver.db');
 const db = new sqlite3.Database(dbPath);

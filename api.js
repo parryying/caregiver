@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL = window.location.hostname === 'localhost' ? 
-    'http://localhost:3001/api' : 
+    'http://localhost:3000/api' : 
     `${window.location.protocol}//${window.location.host}/api`;
 
 // Global state

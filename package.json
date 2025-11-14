@@ -4,9 +4,10 @@
   "description": "Mobile-friendly bilingual caregiver time tracking app with universal data sync",
   "main": "backend/server.js",
   "scripts": {
-    "start": "cd backend && node server.js",
-    "dev": "cd backend && node server.js",
-    "build": "cd backend && npm install"
+    "start": "node start.js",
+    "build": "cd backend && npm install",
+    "dev": "cd backend && npm install && node server.js",
+    "local": "cd backend && node server.js"
   },
   "keywords": ["caregiver", "time-tracker", "bilingual", "mobile"],
   "author": "parryying",
